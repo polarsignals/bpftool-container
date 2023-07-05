@@ -1,0 +1,35 @@
+name: Container
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build-and-push-container:
+    name: Container build and push
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Build container
+        run: |
+          docker build -t ghcr.io/polarsignals/bpftool:latest .
+
+      - name: Login to registry
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u polarsignals --password-stdin ghcr.io
+
+      - name: Push container
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push ghcr.io/polarsignals/bpftool:latest
